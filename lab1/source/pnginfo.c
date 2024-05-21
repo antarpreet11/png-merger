@@ -1,35 +1,125 @@
 #include <stdlib.h>
+#include <arpa/inet.h>
 #include "lab_png.h"
+#include "crc.h"
 
 int is_png(U8 *buf, size_t n) {
-	U8 compare[8] = {'89', '50', '4E', '47', '0D', '0A', '1A', '0A'};
-	printf("%s\n", buf);
-	return memcmp(buf, compare, n);
+	U8 compare[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+
+	for(int i=0; i<n; i++) 
+		if(buf[i] != compare[i]) return 1;
+
+	return 0;
+}
+
+int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) {
+	/*fseek(fp, offset, whence); shift file pointer to beginning of IHDR chunk*/
+	U32 bufInt[sizeof(U32)];
+	U8 bufChar[sizeof(U8)];
+
+	fread(bufInt, sizeof(U32), 1, fp);
+	out->width = ntohl(*bufInt);
+	fread(bufInt, sizeof(U32), 1, fp);
+	out->height = ntohl(*bufInt);
+
+	fread(bufChar, sizeof(U8), 1, fp);
+	out->bit_depth = *bufChar;
+
+	fread(bufChar, sizeof(U8), 1, fp);
+	out->color_type = *bufChar;
+
+	fread(bufChar, sizeof(U8), 1, fp);
+	out->compression = *bufChar;
+
+	fread(bufChar, sizeof(U8), 1, fp);
+	out->filter = *bufChar;
+
+	fread(bufChar, sizeof(U8), 1, fp);
+	out->interlace = *bufChar;
+
+	return 0;
 }
 
 int pnginfo(const char *buf) {
-	FILE *img = fopen(buf, "r");
-	char content;
+	FILE *img = fopen(buf, "rb");
+	U8 header[PNG_SIG_SIZE];
+	fread(header, 1, PNG_SIG_SIZE, img);
+	int isPNG = is_png(header, PNG_SIG_SIZE);
+	printf("%s: ", buf);
 
-	U8 header[8];
-	fread(header, 8, 1, img);
-	printf("%s\n", header);
-	int isPNG = is_png(header, 8);
-	/*
-	while(1) {
-		content = fgetc(img);
+	if (isPNG == 0) {
+		simple_PNG_p png = malloc(sizeof(struct simple_PNG)); /*initialize simple png struct*/
+		if (png == NULL) {
+            perror("Failed to allocate memory for png");
+            fclose(img);
+            return -1;
+        }
 
-		if(feof(img)) break;
+		chunk_p IHDR_c = malloc(sizeof(struct chunk)); /*initialize IHDR chunk*/
+		if (IHDR_c == NULL) {
+            perror("Failed to allocate memory for IHDR_c");
+            free(png);
+            fclose(img);
+            return -1;
+        }
 
-		printf("%c", content);	
+		png->p_IHDR = IHDR_c;
+		data_IHDR_p IHDR_d = malloc(DATA_IHDR_SIZE); /*initialize IHDR data struct*/
+		if (IHDR_d == NULL) {
+            perror("Failed to allocate memory for IHDR_d");
+            free(IHDR_c);
+            free(png);
+            fclose(img);
+            return -1;
+        }
+
+		/*Read IHDR chunk data length value*/
+		U32 bufInt[CHUNK_LEN_SIZE];
+		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
+		IHDR_c->length = ntohl(*bufInt);
+		/*printf("%d\n", IHDR_c->length);*/
+
+		/*Read IHDR chunk type code*/
+		U8 bufChar[CHUNK_TYPE_SIZE];
+		fread(bufChar, 1, CHUNK_TYPE_SIZE, img);
+		for(int i=0; i<CHUNK_TYPE_SIZE; i++) {
+			/*printf("%c", bufChar[i]);
+			printf("\n")*/
+			IHDR_c->type[i] = bufChar[i];
+		}
+		
+		get_png_data_IHDR(IHDR_d, img, 8, SEEK_CUR);
+		IHDR_c->p_data = (U8 *)IHDR_d;
+
+		/*Read IHDR CRC*/
+		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
+		IHDR_c->crc = ntohl(*bufInt);
+		/*printf("%02X\n", IHDR_c->crc);*/
+		U32 crc_calc = crc(, ); /*TODO: determine input for crc function*/
+		/*printf("%u\n", crc_calc);*/
+		if(IHDR_c->crc != crc_calc) {
+			printf("IHDR CRC error: computed %u, expected %u", crc_calc, IHDR_c->crc);
+		}
+
+		printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
+		/*printf("%d %d %d %d %d\n", IHDR_d->bit_depth, IHDR_d->color_type, IHDR_d->compression, IHDR_d->filter, IHDR_d->interlace);*/
+
+		fclose(img);
+		free(IHDR_d);
+		free(IHDR_c);
+		free(png);
+
+		return 0;
 	}
-	*/
+
 	fclose(img);
+	printf("Not a PNG\n");
 
 	return 0;
 }
 
 int main(int argc, char **argv) {
 	pnginfo(argv[1]);
+
 	return 0;
 }
