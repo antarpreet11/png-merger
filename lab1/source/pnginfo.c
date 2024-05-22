@@ -13,7 +13,7 @@ int is_png(U8 *buf, size_t n) {
 }
 
 int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) {
-	/*fseek(fp, offset, whence); shift file pointer to beginning of IHDR chunk*/
+	fseek(fp, offset, whence); /*shift file pointer to beginning of IHDR chunk*/
 	U32 bufInt[sizeof(U32)];
 	U8 bufChar[sizeof(U8)];
 
@@ -109,27 +109,46 @@ int pnginfo(const char *buf) {
 			printf("\n")*/
 			IHDR_c->type[i] = bufChar[i];
 		}
-		
-		get_png_data_IHDR(IHDR_d, img, 8, SEEK_CUR);
+		U8 *data = malloc(IHDR_c->length);
+		fread(data, 1, IDAT_c->length, img);
+
+		get_png_data_IHDR(IHDR_d, img, -IHDR_c->length, SEEK_CUR);
 		/*printf("%ld\n", sizeof(IHDR_d));*/
 		IHDR_c->p_data = (U8 *)IHDR_d;
+		
 
 		/*Read IHDR CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
 		IHDR_c->crc = ntohl(*bufInt);
-		/*printf("%02X\n", IHDR_c->crc);*/
-		/*U32 crc_calc = crc(, ); /*TODO: determine input for crc function
-		printf("%u\n", crc_calc);
-		if(IHDR_c->crc != crc_calc) {
+
+		int crcLen = 4 + IHDR_c->length;
+		U8 *crcBuf = malloc(crcLen);
+
+		for(int i=0; i<4; i++)
+			crcBuf[i] = IHDR_c->type[i];
+		
+		for(int i=4; i<crcLen; i++)
+			crcBuf[i] = data[i-4];
+
+		for(int i=0; i<IHDR_c->length; i++)
+			printf("%02X ", data[i]);
+		printf("\n");
+		for(int i=0; i<crcLen; i++)
+			printf("%02X ", crcBuf[i]);
+		printf("\n");
+
+		printf("%02X\n", IHDR_c->crc);
+		U32 crc_calc = crc(crcBuf, crcLen); /*TODO: determine input for crc function*/
+		printf("%02X\n", crc_calc);
+		/*if(IHDR_c->crc != crc_calc) {
 			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
-			printf("IHDR CRC error: computed %u, expected %u", crc_calc, IHDR_c->crc);
+			printf("IHDR CRC error: computed %02X, expected %02X", crc_calc, IHDR_c->crc);
 			return 1;
 		}*/
 
 		/*Read IDAT chunk data length value*/
 		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
 		IDAT_c->length = ntohl(*bufInt);
-		/*printf("%d\n", IHDR_c->length);*/
 
 		/*Read IDAT chunk type code*/
 		fread(bufChar, 1, CHUNK_TYPE_SIZE, img);
@@ -140,31 +159,34 @@ int pnginfo(const char *buf) {
 		}
 
 		/*Read IDAT data segment*/
-		U8 *data = malloc(IDAT_c->length);
-		fread(data, IDAT_c->length, 1, img);
+		data = realloc(data, IDAT_c->length);
+		fread(bufChar, 1, 1, img);
+		fseek(img, -1, SEEK_CUR); /*first byte of data not being read by next fread call*/
+		fread(data, 1, IDAT_c->length, img);
 		*data = ntohl(*data);
 		IDAT_c->p_data = data;
+		IDAT_c->p_data[0] = *bufChar;
 
 		/*Read IDAT CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
 		IDAT_c->crc = ntohl(*bufInt);
 
-		int crcLen = 4 + IDAT_c->length;
-		U8 crcBuf[crcLen];
+		crcLen = 4 + IDAT_c->length;
+		crcBuf = realloc(crcBuf, crcLen);
 		for(int i=0; i<4; i++)
 			crcBuf[i] = IDAT_c->type[i];
 		
-		for(int i=4; i<IDAT_c->length; i++)
-			crcBuf[i] = IDAT_c->p_data[i];
+		for(int i=4; i<crcLen; i++)
+			crcBuf[i] = IDAT_c->p_data[i-4];
 
-		printf("%02X\n", IDAT_c->crc);
-		U32 crc_calc = crc(crcBuf, crcLen); /*TODO: determine input for crc function*/
+		printf("\n%02X\n", IDAT_c->crc);
+		crc_calc = crc(crcBuf, crcLen); /*TODO: determine input for crc function*/
 		printf("%02X\n", crc_calc);
-		/*if(IDAT_c->crc != crc_calc) {
+		if(IDAT_c->crc != crc_calc) {
 			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 			printf("IDAT CRC error: computed %02X, expected %02X", crc_calc, IDAT_c->crc);
 			return 1;
-		}*/
+		}
 
 		/*Read IEND chunk data length value*/
 		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
@@ -180,7 +202,7 @@ int pnginfo(const char *buf) {
 		}
 
 		/*Read IEND data segment*/
-		data = realloc(data, IEND_c->length);
+		data = realloc(data, IEND_c->length+1);
 		fread(data, IEND_c->length, 1, img);
 		*data = ntohl(*data);
 		IEND_c->p_data = data;
@@ -188,20 +210,21 @@ int pnginfo(const char *buf) {
 		/*Read IEND CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
 		IEND_c->crc = ntohl(*bufInt);
-		/*printf("%02X\n", IEND_c->crc);*/
-		/*crc_calc = crc(, ); /*TODO: determine input for crc function
-		printf("%u\n", crc_calc);
+		printf("%02X\n", IEND_c->crc);
+		crc_calc = crc(IEND_c->type, CHUNK_TYPE_SIZE); /*TODO: determine input for crc function*/
+		printf("%02X\n", crc_calc);
 		if(IEND_c->crc != crc_calc) {
 			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
-			printf("IEND CRC error: computed %u, expected %u", crc_calc, IEND_c->crc);
+			printf("IEND CRC error: computed %02X, expected %02X", crc_calc, IEND_c->crc);
 			return 1;
-		}*/
+		}
 
 		printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 		/*printf("%d %d %d %d %d\n", IHDR_d->bit_depth, IHDR_d->color_type, IHDR_d->compression, IHDR_d->filter, IHDR_d->interlace);*/
 
 		fclose(img);
 		free(data);
+		free(crcBuf);
 		free(IHDR_d);
 		free(IEND_c);
 		free(IDAT_c);
