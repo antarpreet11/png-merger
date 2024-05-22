@@ -142,15 +142,25 @@ int pnginfo(const char *buf) {
 		/*Read IDAT data segment*/
 		U8 *data = malloc(IDAT_c->length);
 		fread(data, IDAT_c->length, 1, img);
+		*data = ntohl(*data);
 		IDAT_c->p_data = data;
 
 		/*Read IDAT CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
 		IDAT_c->crc = ntohl(*bufInt);
-		/*printf("%02X\n", IDAT_c->crc);
-		U32 crc_calc = crc(IDAT_c->p_data, IDAT_c->length); /*TODO: determine input for crc function
+
+		int crcLen = 4 + IDAT_c->length;
+		U8 crcBuf[crcLen];
+		for(int i=0; i<4; i++)
+			crcBuf[i] = IDAT_c->type[i];
+		
+		for(int i=4; i<IDAT_c->length; i++)
+			crcBuf[i] = IDAT_c->p_data[i];
+
+		printf("%02X\n", IDAT_c->crc);
+		U32 crc_calc = crc(crcBuf, crcLen); /*TODO: determine input for crc function*/
 		printf("%02X\n", crc_calc);
-		if(IDAT_c->crc != crc_calc) {
+		/*if(IDAT_c->crc != crc_calc) {
 			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 			printf("IDAT CRC error: computed %02X, expected %02X", crc_calc, IDAT_c->crc);
 			return 1;
@@ -169,13 +179,13 @@ int pnginfo(const char *buf) {
 			IEND_c->type[i] = bufChar[i];
 		}
 
-		/*Read IDAT data segment*/
+		/*Read IEND data segment*/
 		data = realloc(data, IEND_c->length);
 		fread(data, IEND_c->length, 1, img);
+		*data = ntohl(*data);
 		IEND_c->p_data = data;
-		
 
-		/*Read IDAT CRC*/
+		/*Read IEND CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
 		IEND_c->crc = ntohl(*bufInt);
 		/*printf("%02X\n", IEND_c->crc);*/
