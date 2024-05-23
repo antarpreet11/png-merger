@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <arpa/inet.h>
 #include "lab_png.h"
 #include "crc.h"
@@ -9,6 +8,22 @@ int is_png(U8 *buf, size_t n) {
 	for(int i=0; i<n; i++) 
 		if(buf[i] != compare[i]) return 1;
 
+	return 0;
+}
+
+int is_png2(const char *buf) {
+	FILE *img = fopen(buf, "rb");
+	U8 header[PNG_SIG_SIZE];
+	fread(header, 1, PNG_SIG_SIZE, img);
+
+	U8 compare[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+
+	for(int i=0; i<PNG_SIG_SIZE; i++) {
+		printf("%02X ", buf[i]);
+		//if(buf[i] != compare[i]) return 1;
+	}
+
+	fclose(img);
 	return 0;
 }
 
@@ -264,8 +279,8 @@ int pnginfo(const char *buf) {
 	return 0;
 }
 
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
 	pnginfo(argv[1]);
 
 	return 0;
-}
+}*/
