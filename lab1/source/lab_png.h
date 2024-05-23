@@ -11,6 +11,7 @@
  * INCLUDE HEADER FILES
  *****************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 
 /******************************************************************************
  * DEFINED MACROS 
@@ -68,3 +69,4 @@ int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence);
 
 /* declare your own functions prototypes here */
 int pnginfo(const char *buf);
+int is_png2(const char *buf);
