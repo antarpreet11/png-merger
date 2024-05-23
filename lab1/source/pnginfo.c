@@ -11,22 +11,6 @@ int is_png(U8 *buf, size_t n) {
 	return 0;
 }
 
-int is_png2(const char *buf) {
-	FILE *img = fopen(buf, "rb");
-	U8 header[PNG_SIG_SIZE];
-	fread(header, 1, PNG_SIG_SIZE, img);
-
-	U8 compare[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
-
-	for(int i=0; i<PNG_SIG_SIZE; i++) {
-		printf("%02X ", buf[i]);
-		//if(buf[i] != compare[i]) return 1;
-	}
-
-	fclose(img);
-	return 0;
-}
-
 int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) {
 	/*fseek(fp, offset, whence); /*shift file pointer to beginning of IHDR chunk*/
 	U32 bufInt[sizeof(U32)];
@@ -55,12 +39,11 @@ int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) 
 	return 0;
 }
 
-int pnginfo(const char *buf) {
+simple_PNG_p pnginfo(const char *buf, struct simple_PNG *pngOut) {
 	FILE *img = fopen(buf, "rb");
 	U8 header[PNG_SIG_SIZE];
 	fread(header, 1, PNG_SIG_SIZE, img);
 	int isPNG = is_png(header, PNG_SIG_SIZE);
-	printf("%s: ", buf);
 
 	if (isPNG == 0) {
 		/*printf("%ld\n", sizeof(simple_PNG_p));
@@ -70,7 +53,7 @@ int pnginfo(const char *buf) {
 		if (png == NULL) {
             perror("Failed to allocate memory for png");
             fclose(img);
-            return -1;
+            return NULL;
         }
 
 		chunk_p IHDR_c = malloc(sizeof(chunk_p)+12); /*initialize IHDR chunk*/
@@ -78,7 +61,7 @@ int pnginfo(const char *buf) {
             perror("Failed to allocate memory for IHDR_c");
             free(png);
             fclose(img);
-            return -1;
+            return NULL;
         }
 		chunk_p IDAT_c = malloc(sizeof(chunk_p)+12); /*initialize IDAT chunk*/
 		if (IDAT_c == NULL) {
@@ -86,7 +69,7 @@ int pnginfo(const char *buf) {
             free(png);
 			free(IHDR_c);
             fclose(img);
-            return -1;
+            return NULL;
         }
 		chunk_p IEND_c = malloc(sizeof(chunk_p)+12); /*initialize IEND chunk*/
 		if (IEND_c == NULL) {
@@ -95,10 +78,9 @@ int pnginfo(const char *buf) {
 			free(IHDR_c);
 			free(IDAT_c);
             fclose(img);
-            return -1;
+            return NULL;
         }
 
-		png->p_IHDR = IHDR_c;
 		data_IHDR_p IHDR_d = malloc(DATA_IHDR_SIZE); /*initialize IHDR data struct*/
 		if (IHDR_d == NULL) {
             perror("Failed to allocate memory for IHDR_d");
@@ -107,7 +89,7 @@ int pnginfo(const char *buf) {
 			free(IEND_c);
             free(png);
             fclose(img);
-            return -1;
+            return NULL;
         }
 
 		/*Read IHDR chunk data length value*/
@@ -151,19 +133,10 @@ int pnginfo(const char *buf) {
 		U32 crc_calc = crc(crcBuf, crcLen);
 		/*printf("%02X\n", crc_calc);*/
 		if(IHDR_c->crc != crc_calc) {
-			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 			printf("IHDR CRC error: computed %02X, expected %02X\n", crc_calc, IHDR_c->crc);
-
-			free(crcBuf);
-			free(IHDR_d);
-			free(IEND_c);
-			free(IDAT_c);
-			free(IHDR_c);	
-			free(png);
-			fclose(img);
-
-			return 1;
 		}
+
+		png->p_IHDR = IHDR_c;
 
 		/*Read IDAT chunk data length value*/
 		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
@@ -202,20 +175,10 @@ int pnginfo(const char *buf) {
 		crc_calc = crc(crcBuf, crcLen); /*TODO: determine input for crc function*/
 		/*printf("%02X\n", crc_calc);*/
 		if(IDAT_c->crc != crc_calc) {
-			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 			printf("IDAT CRC error: computed %02X, expected %02X\n", crc_calc, IDAT_c->crc);
-
-			free(data);
-			free(crcBuf);
-			free(IHDR_d);
-			free(IEND_c);
-			free(IDAT_c);
-			free(IHDR_c);	
-			free(png);
-			fclose(img);
-
-			return 1;
 		}
+
+		png->p_IDAT = IDAT_c;
 
 		/*Read IEND chunk data length value*/
 		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
@@ -243,40 +206,35 @@ int pnginfo(const char *buf) {
 		crc_calc = crc(IEND_c->type, CHUNK_TYPE_SIZE); /*TODO: determine input for crc function*/
 		/*printf("%02X\n", crc_calc);*/
 		if(IEND_c->crc != crc_calc) {
-			printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
 			printf("IEND CRC error: computed %02X, expected %02X\n", crc_calc, IEND_c->crc);
-
-			free(data);
-			free(crcBuf);
-			free(IHDR_d);
-			free(IEND_c);
-			free(IDAT_c);
-			free(IHDR_c);	
-			free(png);
-			fclose(img);
-
-			return 1;
 		}
 
-		printf("%d x %d\n", IHDR_d->width, IHDR_d->height);
+		png->p_IEND = IEND_c;
+
+		pngOut->p_IDAT = png->p_IDAT;
+		//pngOut->p_IDAT->type[0] = png->p_IDAT->type[0];
+		printf("%d ", png->p_IDAT->type[0]);
+		printf("%d ", pngOut->p_IDAT->type[0]);
+
+		printf("%s: %d x %d\n", buf, IHDR_d->width, IHDR_d->height);
 		/*printf("%d %d %d %d %d\n", IHDR_d->bit_depth, IHDR_d->color_type, IHDR_d->compression, IHDR_d->filter, IHDR_d->interlace);*/
 
 		free(data);
 		free(crcBuf);
-		free(IHDR_d);
+		//free(IHDR_d);
 		free(IEND_c);
-		free(IDAT_c);
-		free(IHDR_c);	
-		free(png);
+		//free(IDAT_c);
+		//free(IHDR_c);	
+		//free(png);
 		fclose(img);
 
-		return 0;
+		return png;
 	}
 
 	fclose(img);
 	printf("Not a PNG\n");
 
-	return 0;
+	return NULL;
 }
 
 /*int main(int argc, char **argv) {

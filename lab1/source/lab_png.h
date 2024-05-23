@@ -68,5 +68,4 @@ int get_png_width(struct data_IHDR *buf);
 int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence);
 
 /* declare your own functions prototypes here */
-int pnginfo(const char *buf);
-int is_png2(const char *buf);
+simple_PNG_p pnginfo(const char *buf, struct simple_PNG *pngOut);
