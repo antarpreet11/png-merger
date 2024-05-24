@@ -1,3 +1,4 @@
 #pragma once
+#include "lab_png.h"
 
-int catpng(char **buf, int count);
+simple_PNG_p catpng(char **buf, int count);

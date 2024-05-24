@@ -6,6 +6,10 @@ int get_png_height(struct data_IHDR *buf) {
     return buf->height;
 }
 
+int get_png_width(struct data_IHDR *buf) {
+    return buf->width;
+}
+
 simple_PNG_p catpng(char **buf, int count) {
     simple_PNG_p pngIn[count];
     simple_PNG_p pngOut = malloc(sizeof(chunk_p)*3);
@@ -20,20 +24,32 @@ simple_PNG_p catpng(char **buf, int count) {
     copy chunks from one of original png to write to new file
     fopen blank file, fwrite each struct data element to file */
 
-    U8 *inf_IDAT_data = malloc(30000);
+    U8 *inf_IDAT_data = malloc(1);
     U64 inf_dataLengths[count];
-    int inf_totalDataLength = 0;
-    int newPNGheight = 0;
+    U64 inf_totalDataLength = 0;
+    int newPNGheight, pngWidth, pngHeight = 0;
     int ret = 0;
 
     for(int i=0; i<count; i++) {
 printf(" data length: %d\n", pngIn[i]->p_IDAT->length);
-        inf_totalDataLength += pngIn[i]->p_IDAT->length;
-        newPNGheight += get_png_height((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
-        ret = mem_inf(inf_IDAT_data, &inf_dataLengths[i], pngIn[i]->p_IDAT->p_data, pngIn[i]->p_IDAT->length);
+        pngHeight = get_png_height((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
+        pngWidth = get_png_width((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
+        inf_IDAT_data = realloc(inf_IDAT_data, inf_totalDataLength+(4*pngWidth+1)*pngHeight);
+
+        ret = mem_inf(inf_IDAT_data+inf_totalDataLength, &inf_dataLengths[i], pngIn[i]->p_IDAT->p_data, (U64)pngIn[i]->p_IDAT->length);
+
+        newPNGheight += pngHeight;
+        inf_totalDataLength += inf_dataLengths[i];
     }
-printf("new datalenght: %ld\n", inf_dataLengths[0]);
+printf("new datalength: %ld\n", inf_dataLengths[0]);
 printf("new height: %d\n", newPNGheight);
+
+    U8 *def_IDAT_data = malloc(inf_totalDataLength);
+    U64 def_totalDataLength = 0;
+    ret = mem_def(def_IDAT_data, &def_totalDataLength, inf_IDAT_data, inf_totalDataLength, Z_DEFAULT_COMPRESSION);
+printf("deflated length: %ld\n", def_totalDataLength);
+    def_IDAT_data = realloc(def_IDAT_data, def_totalDataLength);
+printf("deflated length: %ld\n", def_totalDataLength);
 
     if(pngIn != NULL) {
         for(int i=0; i<count; i++) {
