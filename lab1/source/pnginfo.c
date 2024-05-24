@@ -12,7 +12,7 @@ int is_png(U8 *buf, size_t n) {
 }
 
 int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) {
-	/*fseek(fp, offset, whence); /*shift file pointer to beginning of IHDR chunk*/
+	/*fseek(fp, offset, whence); shift file pointer to beginning of IHDR chunk*/
 	U32 bufInt[sizeof(U32)];
 	U8 bufChar[sizeof(U8)];
 
@@ -107,7 +107,7 @@ simple_PNG_p pnginfo(const char *buf) {
 			IHDR_c->type[i] = bufChar[i];
 		}
 		/*U8 *data = malloc(IHDR_c->length);
-		/*fread(data, 1, IDAT_c->length, img);*/
+		fread(data, 1, IDAT_c->length, img);*/
 
 		get_png_data_IHDR(IHDR_d, img, -IHDR_c->length, SEEK_CUR);
 		/*printf("%ld\n", sizeof(IHDR_d));*/
