@@ -36,11 +36,11 @@ void write_chunk(FILE *fp, chunk_p new_chunk) {
         fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
     }
 
-    unsigned long crc = crc(new_chunk->type, CHUNK_TYPE_SIZE);
+    unsigned long crc_set = crc(new_chunk->type, CHUNK_TYPE_SIZE);
     if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        crc = update_crc(crc, new_chunk->p_data, new_chunk->length);
+        crc_set = crc(new_chunk->p_data, new_chunk->length);
     }
-    new_chunk->crc = htonl(crc);
+    new_chunk->crc = htonl(crc_set); // Convert to network byte order
     fwrite(&(new_chunk->crc), sizeof(U32), 1, fp);
 }
 
