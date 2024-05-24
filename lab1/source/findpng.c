@@ -18,6 +18,8 @@ void check_and_print_png(const char *filePath, int *foundPNG) {
         printf("%s\n", filePath);
         *foundPNG = 1;
     }
+
+    fclose(img);
 }
 
 void findpng(const char *directory, int *foundPNG) {
