@@ -1,7 +1,7 @@
 #include <arpa/inet.h>
 #include "catpng.h"
 #include "lab_png.h"
-#include "zlib.h"
+#include "crc.h"
 
 void write_png_file(const char *filename, struct simple_PNG *new_png) {
     FILE *fp = fopen(filename, "wb+");
@@ -36,10 +36,9 @@ void write_chunk(FILE *fp, chunk_p new_chunk) {
         fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
     }
 
-    unsigned long crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, (const Bytef *)new_chunk->type, CHUNK_TYPE_SIZE);
+    unsigned long crc = crc(new_chunk->type, CHUNK_TYPE_SIZE);
     if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        crc = crc32(crc, new_chunk->p_data, new_chunk->length);
+        crc = update_crc(crc, new_chunk->p_data, new_chunk->length);
     }
     new_chunk->crc = htonl(crc);
     fwrite(&(new_chunk->crc), sizeof(U32), 1, fp);
