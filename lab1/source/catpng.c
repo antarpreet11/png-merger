@@ -1,9 +1,26 @@
 #include <arpa/inet.h>
-#include "catpng.h"
 #include "lab_png.h"
 #include "crc.h"
+#include "catpng.h"
 
-void write_png_file(const char *filename, struct simple_PNG *new_png) {
+void write_chunk(FILE *fp, chunk_p new_chunk) {
+    new_chunk->length = htonl(new_chunk->length);
+
+    fwrite(&(new_chunk->length), sizeof(U32), 1, fp);
+    fwrite(new_chunk->type, sizeof(U8), CHUNK_TYPE_SIZE, fp);
+    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
+        fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
+    }
+
+    unsigned long crc_set = crc(new_chunk->type, CHUNK_TYPE_SIZE);
+    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
+        crc_set = crc(new_chunk->p_data, new_chunk->length);
+    }
+    new_chunk->crc = htonl(crc_set); // Convert to network byte order
+    fwrite(&(new_chunk->crc), sizeof(U32), 1, fp);
+}
+
+void write_png_file(const char *filename, simple_PNG_p new_png) {
     FILE *fp = fopen(filename, "wb+");
     if (fp == NULL) {
         fprintf(stderr, "write_png_file: Could not open file %s for writing\n", filename);
@@ -25,23 +42,6 @@ void write_png_file(const char *filename, struct simple_PNG *new_png) {
     write_chunk(fp, new_png->p_IEND);
 
     fclose(fp);  
-}
-
-void write_chunk(FILE *fp, chunk_p new_chunk) {
-    new_chunk->length = htonl(new_chunk->length);
-
-    fwrite(&(new_chunk->length), sizeof(U32), 1, fp);
-    fwrite(new_chunk->type, sizeof(U8), CHUNK_TYPE_SIZE, fp);
-    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
-    }
-
-    unsigned long crc_set = crc(new_chunk->type, CHUNK_TYPE_SIZE);
-    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        crc_set = crc(new_chunk->p_data, new_chunk->length);
-    }
-    new_chunk->crc = htonl(crc_set); // Convert to network byte order
-    fwrite(&(new_chunk->crc), sizeof(U32), 1, fp);
 }
 
 int catpng(char **buf, int count) {
