@@ -17,18 +17,46 @@ int get_png_width(struct data_IHDR *buf) {
 }
 
 void write_chunk(FILE *fp, chunk_p new_chunk) {
-    U32 length = htonl(new_chunk->length);
+    if (new_chunk == NULL || new_chunk->p_data == NULL) {
+        fprintf(stderr, "write_chunk: NULL chunk or chunk data\n");
+        return;
+    }
 
-    fwrite(&(length), sizeof(U32), 1, fp);
-    fwrite(new_chunk->type, sizeof(U8), CHUNK_TYPE_SIZE, fp);
-    fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
+    U32 length = htonl(new_chunk->length);
+    size_t written = 0;
+
+    written = fwrite(&length, sizeof(U32), 1, fp);
+    if (written != 1) {
+        fprintf(stderr, "write_chunk: Failed to write chunk length\n");
+        return;
+    }
+
+    written = fwrite(new_chunk->type, sizeof(U8), CHUNK_TYPE_SIZE, fp);
+    if (written != CHUNK_TYPE_SIZE) {
+        fprintf(stderr, "write_chunk: Failed to write chunk type\n");
+        return;
+    }
+
+    written = fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
+    if (written != new_chunk->length) {
+        fprintf(stderr, "write_chunk: Failed to write chunk data\n");
+        return;
+    }
 
     U32 crc_value = htonl(new_chunk->crc);
-    fwrite(&(crc_value), sizeof(U32), 1, fp);
+    written = fwrite(&crc_value, sizeof(U32), 1, fp);
+    if (written != 1) {
+        fprintf(stderr, "write_chunk: Failed to write chunk CRC\n");
+    }
 }
 
 void write_png_file(const char *filename, simple_PNG_p new_png) {
-    FILE *fp = fopen(filename, "wb+");
+    if (new_png == NULL) {
+        fprintf(stderr, "write_png_file: NULL PNG structure\n");
+        return;
+    }
+
+    FILE *fp = fopen(filename, "wb");
     if (fp == NULL) {
         fprintf(stderr, "write_png_file: Could not open file %s for writing\n", filename);
         return;
@@ -37,15 +65,35 @@ void write_png_file(const char *filename, simple_PNG_p new_png) {
     U8 header[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
 
     /* Write PNG signature */
-    fwrite(header, sizeof(U8), PNG_SIG_SIZE, fp);
+    size_t written = fwrite(header, sizeof(U8), PNG_SIG_SIZE, fp);
+    if (written != PNG_SIG_SIZE) {
+        fprintf(stderr, "write_png_file: Failed to write PNG header\n");
+        fclose(fp);
+        return;
+    }
 
     /* Write IHDR chunk */
+    if (new_png->p_IHDR == NULL) {
+        fprintf(stderr, "write_png_file: IHDR chunk is NULL\n");
+        fclose(fp);
+        return;
+    }
     write_chunk(fp, new_png->p_IHDR);
 
     /* Write IDAT chunk */
+    if (new_png->p_IDAT == NULL) {
+        fprintf(stderr, "write_png_file: IDAT chunk is NULL\n");
+        fclose(fp);
+        return;
+    }
     write_chunk(fp, new_png->p_IDAT);
 
     /* Write IEND chunk */
+    if (new_png->p_IEND == NULL) {
+        fprintf(stderr, "write_png_file: IEND chunk is NULL\n");
+        fclose(fp);
+        return;
+    }
     write_chunk(fp, new_png->p_IEND);
 
     fclose(fp);  
@@ -188,6 +236,7 @@ int main(int argc, char **argv) {
         simple_PNG_p pngOut = catpng(validPNGs, pngCount);
 /*for(int i=0;i<36;i++)
 printf("%02x", pngOut->p_IDAT->p_data[i]);*/
+        write_png_file("all.png", pngOut);
 
         free(pngOut->p_IEND->p_data);
         free(pngOut->p_IEND);
