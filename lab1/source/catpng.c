@@ -4,15 +4,15 @@
 #include <arpa/inet.h>
 
 int get_png_height(struct data_IHDR *buf) {
-    return buf->height;
+    return ntohl(buf->height);
 }
 
 void set_png_height(struct data_IHDR *buf, U32 h) {
-    buf->height = h;
+    buf->height = htonl(h);
 }
 
 int get_png_width(struct data_IHDR *buf) {
-    return buf->width;
+    return ntohl(buf->width);
 }
 
 simple_PNG_p catpng(char **buf, int count) {
