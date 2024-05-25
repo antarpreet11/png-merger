@@ -15,5 +15,9 @@ catpng: source/catpng.c source/pnginfo.c source/crc.c source/zutil.c
 	$(CC) -o $@ $^ -lz
 
 # Clean rule
+#clean:
+#	rm -f $(EXECUTABLES) *.o *.out
+
+.PHONY: clean
 clean:
-	rm -f $(EXECUTABLES) *.o *.out
+	rm -f *.d *.o $(EXECUTABLES) 
