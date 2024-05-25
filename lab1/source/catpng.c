@@ -118,57 +118,41 @@ simple_PNG_p catpng(char **buf, int count) {
     U64 inf_totalDataLength = 0;
     int newPNGheight = 0, pngWidth = 0, pngHeight = 0;
     int ret = 0;
-/*for(int i=0; i<36; i++)
-printf("%02X", pngIn[0]->p_IDAT->p_data[i]);*/
+
     for(int i=0; i<count; i++) {
-//printf(" data length: %d\n", pngIn[i]->p_IDAT->length);
         pngHeight = get_png_height((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
         pngWidth = get_png_width((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
+        /*Increase size of inflated data buffer by size of next inflated IDAT data segment*/
         inf_IDAT_data = realloc(inf_IDAT_data, inf_totalDataLength+(4*pngWidth+1)*pngHeight);
-
+        /*Append and inflate new IDAT data segment to inflated data buffer*/
         ret = mem_inf(inf_IDAT_data+inf_totalDataLength, &inf_dataLengths[i], pngIn[i]->p_IDAT->p_data, (U64)pngIn[i]->p_IDAT->length);
-
+        /*Update new PNG parameters*/
         newPNGheight += pngHeight;
         inf_totalDataLength += inf_dataLengths[i];
     }
 
     free(pngIn[0]->p_IDAT->p_data);
-//printf("new datalength: %ld\n", inf_dataLengths[0]);
-//printf("new height: %d\n", newPNGheight);
 
+    /*Deflate concatentated IDAT data*/
     U8 *def_IDAT_data = malloc(inf_totalDataLength);
     U64 def_totalDataLength = 0;
     ret = mem_def(def_IDAT_data, &def_totalDataLength, inf_IDAT_data, inf_totalDataLength, Z_DEFAULT_COMPRESSION);
-//printf("deflated length: %ld\n", def_totalDataLength);
+    /*Reduce size of deflated data buffer*/
     def_IDAT_data = realloc(def_IDAT_data, def_totalDataLength);
-/*for(int i=0; i<36; i++)
-printf("%02X ", def_IDAT_data[i]);
-printf("\n");
-    /**def_IDAT_data = ntohl(*def_IDAT_data); /*if wrong, maybe try converting each chunk during concatenation
-for(int i=0; i<36; i++)
-printf("%02X ", def_IDAT_data[i]);
-printf("\n");
-printf("deflated length: %ld\n", def_totalDataLength);*/
 
     /*Write out IHDR*/
     pngOut->p_IHDR = pngIn[0]->p_IHDR;
     pngOut->p_IHDR->p_data = pngIn[0]->p_IHDR->p_data;
-
-//printf("%d\n", get_png_height((data_IHDR_p)pngOut->p_IHDR->p_data));
     set_png_height((data_IHDR_p)pngOut->p_IHDR->p_data, newPNGheight);
-//printf("%d\n", get_png_height((data_IHDR_p)pngOut->p_IHDR->p_data));
 
-    int crcLen = CHUNK_TYPE_SIZE + DATA_IHDR_SIZE;//pngOut->p_IHDR->length;
+    /*Fill IHDR crc buffer*/
+    int crcLen = CHUNK_TYPE_SIZE + DATA_IHDR_SIZE;
     U8 *crcBuf = malloc(crcLen);
-
     for(int i=0; i<CHUNK_TYPE_SIZE; i++)
         crcBuf[i] = pngOut->p_IHDR->type[i];
-
     for(int i=CHUNK_TYPE_SIZE; i<crcLen; i++)
         crcBuf[i] = (pngOut->p_IHDR->p_data[i-4]);
-/*for(int i=0;i<crcLen; i++)
-printf("%02X ", crcBuf[i]);*/
-
+    /*Calc IHDR crc*/
     U32 crc_calc = crc(crcBuf, crcLen);
     pngOut->p_IHDR->crc = crc_calc;
 
@@ -177,22 +161,20 @@ printf("%02X ", crcBuf[i]);*/
     pngOut->p_IDAT->p_data = def_IDAT_data;
     pngOut->p_IDAT->length = def_totalDataLength;
 
+    /*Fill IDAT crc calc buffer*/
     crcLen = 4 + pngOut->p_IDAT->length;
     crcBuf = realloc(crcBuf, crcLen);
     for(int i=0; i<4; i++)
         crcBuf[i] = pngOut->p_IDAT->type[i];
-    
     for(int i=4; i<crcLen; i++)
         crcBuf[i] = pngOut->p_IDAT->p_data[i-4];
-
+    /*Calculate IDAT crc*/
     crc_calc = crc(crcBuf, crcLen);
     pngOut->p_IDAT->crc = crc_calc;
 
     /*Write out IEND*/
     pngOut->p_IEND = pngIn[0]->p_IEND;
     pngOut->p_IEND->p_data = pngIn[0]->p_IEND->p_data;
-
-    //free(pngIn[0]->p_IDAT->p_data);
     
     if(pngIn != NULL) {
         for(int i=1; i<count; i++) {
@@ -207,7 +189,6 @@ printf("%02X ", crcBuf[i]);*/
     }
 
     free(inf_IDAT_data);
-    //free(pngIn[0]->p_IDAT->p_data);
     free(pngIn[0]);
     free(crcBuf);
     return pngOut;
