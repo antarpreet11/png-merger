@@ -17,7 +17,7 @@ int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence) 
 	U8 bufChar[sizeof(U8)];
 
 	fread(bufInt, sizeof(U32), 1, fp);
-	out->width = (*bufInt); /*byte order conversion messes with crc conversion*/
+	out->width = (*bufInt); /*byte order conversion messes with crc calculation*/
 	fread(bufInt, sizeof(U32), 1, fp);
 	out->height = (*bufInt);
 
@@ -126,8 +126,8 @@ simple_PNG_p pnginfo(const char *buf) {
 		for(int i=CHUNK_TYPE_SIZE; i<crcLen; i++)
 			crcBuf[i] = (IHDR_c->p_data[i-4]);
 //printf("%d\n", IHDR_d->width);
-		IHDR_d->width = ntohl(IHDR_d->width);
-		IHDR_d->height = ntohl(IHDR_d->height);
+		IHDR_d->width = (IHDR_d->width); /*byte order conversion mismatches hex dump*/
+		IHDR_d->height = (IHDR_d->height);
 
 //printf("%d\n", IHDR_d->width);
 		IHDR_c->p_data = (U8 *)IHDR_d;
@@ -216,7 +216,7 @@ simple_PNG_p pnginfo(const char *buf) {
 
 		png->p_IEND = IEND_c;
 
-		printf("%s: %d x %d\n", buf, IHDR_d->width, IHDR_d->height);
+		printf("%s: %d x %d\n", buf, ntohl(IHDR_d->width), ntohl(IHDR_d->height));
 		/*printf("%d %d %d %d %d\n", IHDR_d->bit_depth, IHDR_d->color_type, IHDR_d->compression, IHDR_d->filter, IHDR_d->interlace);*/
 
 //printf("%d\n", IDAT_c->p_data[0]);
@@ -246,7 +246,29 @@ printf("\n");*/
 }
 
 /*int main(int argc, char **argv) {
-	pnginfo(argv[1]);
+	simple_PNG_p png = pnginfo(argv[1]);
+	
+	printf("%02x ", png->p_IHDR->length);
+	for(int i=0; i<CHUNK_TYPE_SIZE; i++)
+		printf("%02x ", png->p_IHDR->type[i]);
+	for(int i=0; i<DATA_IHDR_SIZE; i++)
+		printf("%02x ", png->p_IHDR->p_data[i]);
+	printf("%02x ", png->p_IHDR->crc);
+
+
+	printf("\n%02x ", png->p_IDAT->length);
+	for(int i=0; i<CHUNK_TYPE_SIZE; i++)
+		printf("%02x ", png->p_IDAT->type[i]);
+	for(int i=0; i<png->p_IDAT->length; i++)
+		printf("%02x ", png->p_IDAT->p_data[i]);
+	printf("%02x ", png->p_IDAT->crc);
+
+	printf("\n%02x ", png->p_IEND->length);
+	for(int i=0; i<CHUNK_TYPE_SIZE; i++)
+		printf("%02x ", png->p_IEND->type[i]);
+	for(int i=0; i<png->p_IEND->length; i++)
+		printf("%02x ", png->p_IEND->p_data[i]);
+	printf("%02x ", png->p_IEND->crc);
 
 	return 0;
 }*/
