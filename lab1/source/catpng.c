@@ -213,19 +213,20 @@ printf("%02X ", crcBuf[i]);*/
     return pngOut;
 }
 
-int getValidPNGs (int pathCount, char **paths, char **validPNGs) {
+int getValidPNGs (int pathCount, char **args, char **validPNGs) {
     int pngCount = 0, nextIndex = 1;
 
     for(int i = 1; i<=pathCount; i++) {
-        FILE *img = fopen(paths[i], "rb");
+        FILE *img = fopen(args[i], "rb");
 	    U8 header[PNG_SIG_SIZE];
 	    fread(header, 1, PNG_SIG_SIZE, img);
 
         if(is_png(header, PNG_SIG_SIZE) == 0) {
-            validPNGs[i-nextIndex] = paths[i];
+            validPNGs[i-nextIndex] = args[i];
             pngCount++;
-            nextIndex++;
         }
+        else
+            nextIndex++;
         
         fclose(img);
     }
