@@ -125,12 +125,12 @@ simple_PNG_p pnginfo(const char *buf) {
 
 		for(int i=CHUNK_TYPE_SIZE; i<crcLen; i++)
 			crcBuf[i] = (IHDR_c->p_data[i-4]);
-printf("%d\n", IHDR_d->width);
+//printf("%d\n", IHDR_d->width);
 		IHDR_d->width = ntohl(IHDR_d->width);
 		IHDR_d->height = ntohl(IHDR_d->height);
 
-printf("%d\n", IHDR_d->width);
-IHDR_c->p_data = (U8 *)IHDR_d;
+//printf("%d\n", IHDR_d->width);
+		IHDR_c->p_data = (U8 *)IHDR_d;
 		/*printf("%02X\n", IHDR_c->crc);*/
 		U32 crc_calc = crc(crcBuf, crcLen);
 		/*printf("%02X\n", crc_calc);*/
@@ -143,6 +143,7 @@ IHDR_c->p_data = (U8 *)IHDR_d;
 		/*Read IDAT chunk data length value*/
 		fread(bufInt, 1, CHUNK_LEN_SIZE, img);
 		IDAT_c->length = ntohl(*bufInt);
+//printf("data length: %d\n", IDAT_c->length);
 
 		/*Read IDAT chunk type code*/
 		fread(bufChar, 1, CHUNK_TYPE_SIZE, img);
@@ -154,14 +155,14 @@ IHDR_c->p_data = (U8 *)IHDR_d;
 
 		/*Read IDAT data segment*/
 		U8 *data_id = malloc(IDAT_c->length);
-		fread(bufChar, 1, 1, img);
-		fseek(img, -1, SEEK_CUR); /*first byte of data not being read by next fread call*/
+		//fread(bufChar, 1, 1, img);
+		//fseek(img, -1, SEEK_CUR); /*first byte of data not being read by next fread call*/
 		fread(data_id, 1, IDAT_c->length, img);
-		*data_id = ntohl(*data_id);
+		//*data_id = ntohl(*data_id);
 		IDAT_c->p_data = data_id;
-		IDAT_c->p_data[0] = *bufChar;
+		//IDAT_c->p_data[0] = *bufChar;
 
-printf("%d\n", IDAT_c->p_data[0]);
+//printf("%d\n", IDAT_c->p_data[0]);
 
 		/*Read IDAT CRC*/
 		fread(bufInt, 1, CHUNK_CRC_SIZE, img);
@@ -196,7 +197,7 @@ printf("%d\n", IDAT_c->p_data[0]);
 			printf("\n");*/
 			IEND_c->type[i] = bufChar[i];
 		}
-printf("%d\n", IDAT_c->p_data[0]);
+//printf("%d\n", IDAT_c->p_data[0]);
 		/*Read IEND data segment*/
 		U8 *data_ie = malloc(IEND_c->length+1);
 		fread(data_ie, IEND_c->length, 1, img);
@@ -218,14 +219,15 @@ printf("%d\n", IDAT_c->p_data[0]);
 		printf("%s: %d x %d\n", buf, IHDR_d->width, IHDR_d->height);
 		/*printf("%d %d %d %d %d\n", IHDR_d->bit_depth, IHDR_d->color_type, IHDR_d->compression, IHDR_d->filter, IHDR_d->interlace);*/
 
-printf("%d\n", IDAT_c->p_data[0]);
-printf("%d\n", IEND_c->p_data[0]);
+//printf("%d\n", IDAT_c->p_data[0]);
+//printf("%d\n", IEND_c->p_data[0]);
 
-for(int i=0; i<13; i++)
+/*for(int i=0; i<13; i++)
         printf("%02X ",png->p_IHDR->p_data[i]);
-printf("\n");
+printf("\n");*/
 
 		//free(data);
+
 		free(crcBuf);
 		//free(IHDR_d);
 		//free(IEND_c);
