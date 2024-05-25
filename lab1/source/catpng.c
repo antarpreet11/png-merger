@@ -9,7 +9,7 @@ int get_png_height(struct data_IHDR *buf) {
 }
 
 void set_png_height(struct data_IHDR *buf, U32 h) {
-    buf->height = htonl(h);
+    buf->height = (h);
 }
 
 int get_png_width(struct data_IHDR *buf) {
