@@ -227,6 +227,7 @@ simple_PNG_p pnginfo(const char *buf) {
 printf("\n");*/
 
 		//free(data);
+
 		free(crcBuf);
 		//free(IHDR_d);
 		//free(IEND_c);
