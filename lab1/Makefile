@@ -1,5 +1,4 @@
 CC=gcc
-CFLAGS=-Wall -g
 
 # Executables
 EXECUTABLES = findpng catpng
@@ -9,12 +8,12 @@ all: $(EXECUTABLES)
 
 # Rule to build findpng
 findpng: source/findpng.c source/pnginfo.c source/crc.c
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) -o $@ $^
 
 # Rule to build catpng
-catpng: source/catpng.c source/pnginfo.c source/crc.c
-	$(CC) $(CFLAGS) -o $@ $^
+catpng: source/catpng.c source/pnginfo.c source/crc.c source/zutil.c
+	$(CC) -o $@ $^ -lz
 
 # Clean rule
 clean:
-	rm -f $(EXECUTABLES)
+	rm -f $(EXECUTABLES) *.o *.out
