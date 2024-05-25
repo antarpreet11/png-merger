@@ -206,7 +206,11 @@ printf("%02X ", crcBuf[i]);*/
         }
     }
 
-    return 0;
+    free(inf_IDAT_data);
+    //free(pngIn[0]->p_IDAT->p_data);
+    free(pngIn[0]);
+    free(crcBuf);
+    return pngOut;
 }
 
 int getValidPNGs (int pathCount, char **paths, char **validPNGs) {
