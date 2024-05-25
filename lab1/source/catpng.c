@@ -4,20 +4,14 @@
 #include "catpng.h"
 
 void write_chunk(FILE *fp, chunk_p new_chunk) {
-    new_chunk->length = htonl(new_chunk->length);
+    U32 length = htonl(new_chunk->length);
 
-    fwrite(&(new_chunk->length), sizeof(U32), 1, fp);
+    fwrite(&(length), sizeof(U32), 1, fp);
     fwrite(new_chunk->type, sizeof(U8), CHUNK_TYPE_SIZE, fp);
-    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
-    }
+    fwrite(new_chunk->p_data, sizeof(U8), new_chunk->length, fp);
 
-    unsigned long crc_set = crc(new_chunk->type, CHUNK_TYPE_SIZE);
-    if (new_chunk->p_data != NULL && new_chunk->length > 0) {
-        crc_set = crc(new_chunk->p_data, new_chunk->length);
-    }
-    new_chunk->crc = htonl(crc_set); // Convert to network byte order
-    fwrite(&(new_chunk->crc), sizeof(U32), 1, fp);
+    U32 crc_value = htonl(new_chunk->crc);
+    fwrite(&(crc_value), sizeof(U32), 1, fp);
 }
 
 void write_png_file(const char *filename, simple_PNG_p new_png) {
@@ -30,7 +24,7 @@ void write_png_file(const char *filename, simple_PNG_p new_png) {
     U8 header[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
 
     /* Write PNG signature */
-    fwrite(header, 1, PNG_SIG_SIZE, fp);
+    fwrite(header, sizeof(U8), PNG_SIG_SIZE, fp);
 
     /* Write IHDR chunk */
     write_chunk(fp, new_png->p_IHDR);
@@ -93,4 +87,4 @@ int main(int argc, char **argv) {
 
     free(validPNGs);
     return 0;
-}
+} 
