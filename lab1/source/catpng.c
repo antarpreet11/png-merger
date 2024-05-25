@@ -116,7 +116,7 @@ simple_PNG_p catpng(char **buf, int count) {
     U8 *inf_IDAT_data = malloc(1);
     U64 inf_dataLengths[count];
     U64 inf_totalDataLength = 0;
-    int newPNGheight, pngWidth, pngHeight = 0;
+    int newPNGheight = 0, pngWidth = 0, pngHeight = 0;
     int ret = 0;
 /*for(int i=0; i<36; i++)
 printf("%02X", pngIn[0]->p_IDAT->p_data[i]);*/
@@ -214,7 +214,7 @@ printf("%02X ", crcBuf[i]);*/
 }
 
 int getValidPNGs (int pathCount, char **paths, char **validPNGs) {
-    int pngCount = 0;
+    int pngCount = 0, nextIndex = 1;
 
     for(int i = 1; i<=pathCount; i++) {
         FILE *img = fopen(paths[i], "rb");
@@ -222,10 +222,11 @@ int getValidPNGs (int pathCount, char **paths, char **validPNGs) {
 	    fread(header, 1, PNG_SIG_SIZE, img);
 
         if(is_png(header, PNG_SIG_SIZE) == 0) {
-            validPNGs[i-1] = paths[i];
+            validPNGs[i-nextIndex] = paths[i];
             pngCount++;
+            nextIndex++;
         }
-
+        
         fclose(img);
     }
 
@@ -234,12 +235,12 @@ int getValidPNGs (int pathCount, char **paths, char **validPNGs) {
 
 int main(int argc, char **argv) {
     char **validPNGs = calloc(argc-1, sizeof *argv);
+
     int pngCount = getValidPNGs(argc-1, argv, validPNGs);
 
     if(pngCount > 0) {
         simple_PNG_p pngOut = catpng(validPNGs, pngCount);
-/*for(int i=0;i<36;i++)
-printf("%02x", pngOut->p_IDAT->p_data[i]);*/
+
         write_png_file("all.png", pngOut);
 
         free(pngOut->p_IEND->p_data);
