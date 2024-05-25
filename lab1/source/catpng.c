@@ -9,7 +9,7 @@ int get_png_height(struct data_IHDR *buf) {
 }
 
 void set_png_height(struct data_IHDR *buf, U32 h) {
-    buf->height = (h);
+    buf->height = htonl(h);
 }
 
 int get_png_width(struct data_IHDR *buf) {
@@ -116,7 +116,7 @@ simple_PNG_p catpng(char **buf, int count) {
     U8 *inf_IDAT_data = malloc(1);
     U64 inf_dataLengths[count];
     U64 inf_totalDataLength = 0;
-    int newPNGheight, pngWidth, pngHeight = 0;
+    int newPNGheight = 0, pngWidth = 0, pngHeight = 0;
     int ret = 0;
 /*for(int i=0; i<36; i++)
 printf("%02X", pngIn[0]->p_IDAT->p_data[i]);*/
