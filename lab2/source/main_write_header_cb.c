@@ -191,8 +191,9 @@ int write_file(const char *path, const void *in, size_t len)
 }
 
 
-int download_img( int img_num ) 
+void* download_img(void* img ) 
 {
+    int *img_num = img;
     CURL *curl_handle;
     CURLcode res;
     char url[256];
@@ -201,8 +202,8 @@ int download_img( int img_num )
     
     recv_buf_init(&recv_buf, BUF_SIZE);
     
-    if (img_num) {
-        sprintf(url, IMG_URL, img_num);
+    if (*img_num) {
+        sprintf(url, IMG_URL, *img_num);
     } else {
         sprintf(url, IMG_URL, 1); 
     }
@@ -214,7 +215,7 @@ int download_img( int img_num )
 
     if (curl_handle == NULL) {
         fprintf(stderr, "curl_easy_init: returned NULL\n");
-        return 1;
+        //return 1;
     }
 
     /* specify URL to get */
@@ -244,12 +245,12 @@ int download_img( int img_num )
                recv_buf.size, recv_buf.buf, recv_buf.seq);
     }
 
-    sprintf(fname, "./source/img/img%d_%d.png", img_num, recv_buf.seq);
+    sprintf(fname, "./source/img/img%d_%d.png", *img_num, recv_buf.seq);
     write_file(fname, recv_buf.buf, recv_buf.size);
 
     /* cleaning up */
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
     recv_buf_cleanup(&recv_buf);
-    return 0;
+    return img;
 }

@@ -3,7 +3,7 @@ CFLAGS = -Wall -g -std=gnu99
 LD = gcc
 LDFLAGS = -g 
 VPATH := source
-LDLIBS = -lcurl
+LDLIBS = -lcurl -pthread
 
 SRCS   = paster.c main_write_header_cb.c
 OBJS   = paster.o 

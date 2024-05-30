@@ -2,12 +2,40 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "main_write_header_cb.c"
+
+struct thread_args
+{
+    int pic;
+};
 
 int paster(int numT, int pic) {
     printf("Use %d threads.\n", numT);
     printf("Get %d picture.\n", pic);
-    download_img(pic);
+    //download_img(pic);
+
+    pthread_t *p_tids = malloc(sizeof(pthread_t) * numT);
+    struct thread_args in_params[numT];
+    /*struct thread_ret *p_results[numT];*/
+     
+    for (int i=0; i<numT; i++) {
+        in_params[i].pic = pic;
+        pthread_create(p_tids + i, NULL, download_img, in_params + i); 
+    }
+
+    for (int i=0; i<numT; i++) {
+        (void)pthread_join(p_tids[i], NULL);
+        /*printf("Thread ID %lu joined.\n", p_tids[i]);
+        printf("sum(%d,%d) = %d.\n", \
+               in_params[i].x, in_params[i].y, p_results[i]->sum); 
+        printf("product(%d,%d) = %d.\n\n", \
+               in_params[i].x, in_params[i].y, p_results[i]->product);*/
+    }
+
+    /* cleaning up */
+
+    free(p_tids);
 
     return 0;
 }
