@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "main_write_header_cb.c"
 
 int paster(int numT, int pic) {
     printf("Use %d threads.\n", numT);
     printf("Get %d picture.\n", pic);
+    download_img(pic);
 
     return 0;
 }
@@ -16,7 +18,7 @@ int main(int argc, char **argv)
     int t = 1;
     int n = 1;
     char *str = "option requires an argument";
-    
+
     while ((c = getopt (argc, argv, "t:n:")) != -1) {
         switch (c) {
         case 't':

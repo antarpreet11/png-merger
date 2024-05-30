@@ -3,10 +3,10 @@ CFLAGS = -Wall -g -std=gnu99
 LD = gcc
 LDFLAGS = -g 
 VPATH := source
-LDLIBS = 
+LDLIBS = -lcurl
 
-SRCS   = paster.c
-OBJS   = paster.o
+SRCS   = paster.c main_write_header_cb.c
+OBJS   = paster.o 
 TARGETS= paster
 
 all: ${TARGETS}
