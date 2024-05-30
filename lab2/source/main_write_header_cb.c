@@ -29,6 +29,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <curl/curl.h>
 
 #define IMG_URL "http://ece252-1.uwaterloo.ca:2520/image?img=%d"
@@ -191,13 +192,14 @@ int write_file(const char *path, const void *in, size_t len)
 }
 
 
-int download_img( int img_num ) 
+int download_img( int img_num, int count, bool *downloaded) 
 {
     CURL *curl_handle;
     CURLcode res;
     char url[256];
     RECV_BUF recv_buf;
     char fname[256];
+    int newCount = count;
     
     recv_buf_init(&recv_buf, BUF_SIZE);
     
@@ -245,11 +247,16 @@ int download_img( int img_num )
     }
 
     sprintf(fname, "./source/img/img%d_%d.png", img_num, recv_buf.seq);
-    write_file(fname, recv_buf.buf, recv_buf.size);
+    
+    if (downloaded[recv_buf.seq] == false) {
+        write_file(fname, recv_buf.buf, recv_buf.size);
+        downloaded[recv_buf.seq] = true;
+        newCount = count + 1;
+    }
 
     /* cleaning up */
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
     recv_buf_cleanup(&recv_buf);
-    return 0;
+    return newCount;
 }

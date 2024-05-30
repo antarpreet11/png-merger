@@ -25,3 +25,4 @@ paster.out: $(OBJS)
 .PHONY: clean
 clean:
 	rm -f *~ *.d *.o $(TARGETS) 
+	rm -rf source/img/*.png

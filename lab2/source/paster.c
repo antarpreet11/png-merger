@@ -2,12 +2,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "main_write_header_cb.c"
 
 int paster(int numT, int pic) {
+    bool downloaded[50];
+    int count = 0;
+
     printf("Use %d threads.\n", numT);
     printf("Get %d picture.\n", pic);
-    download_img(pic);
+    
+    while (count < 50) {
+        count = download_img(pic, count, downloaded);
+        printf("count = %d\n", count);
+    }
 
     return 0;
 }
