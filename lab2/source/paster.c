@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <pthread.h>
 #include "main_write_header_cb.c"
 
@@ -11,6 +12,9 @@ struct thread_args
 };
 
 int paster(int numT, int pic) {
+    bool downloaded[50];
+    int count = 0;
+
     printf("Use %d threads.\n", numT);
     printf("Get %d picture.\n", pic);
     //download_img(pic);
@@ -36,6 +40,11 @@ int paster(int numT, int pic) {
     /* cleaning up */
 
     free(p_tids);
+    
+    while (count < 50) {
+       // count = download_img(pic, count, downloaded);
+        printf("count = %d\n", count);
+    }
 
     return 0;
 }
