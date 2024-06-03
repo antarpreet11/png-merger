@@ -192,9 +192,8 @@ int write_file(const char *path, const void *in, size_t len)
 }
 
 
-void* download_img(void* img ) 
+int download_img(int img_num, int count, bool *downloaded) 
 {
-    int *img_num = img;
     CURL *curl_handle;
     CURLcode res;
     char url[256];
@@ -204,8 +203,8 @@ void* download_img(void* img )
     
     recv_buf_init(&recv_buf, BUF_SIZE);
     
-    if (*img_num) {
-        sprintf(url, IMG_URL, *img_num);
+    if (img_num) {
+        sprintf(url, IMG_URL, img_num);
     } else {
         sprintf(url, IMG_URL, 1); 
     }
@@ -242,10 +241,10 @@ void* download_img(void* img )
 
     if( res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    } else {
+    } /*else {
 	printf("%lu bytes received in memory %p, seq=%d.\n", \
                recv_buf.size, recv_buf.buf, recv_buf.seq);
-    }
+    }*/
 
     sprintf(fname, "./source/img/img%d_%d.png", img_num, recv_buf.seq);
     
@@ -259,5 +258,5 @@ void* download_img(void* img )
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
     recv_buf_cleanup(&recv_buf);
-    return img;
+    return newCount;
 }

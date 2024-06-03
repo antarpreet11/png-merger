@@ -25,4 +25,7 @@ paster.out: $(OBJS)
 .PHONY: clean
 clean:
 	rm -f *~ *.d *.o $(TARGETS) 
+
+.PHONY: imgclean 
+imgclean:
 	rm -rf source/img/*.png

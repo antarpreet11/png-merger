@@ -9,44 +9,67 @@
 struct thread_args
 {
     int pic;
-};
+    int count;
+    bool *downloaded[50];
+}typedef thread_args;
+
+void *download_imgs(void *args);
+void *download_imgs(void *args) {
+printf("download_imgs");
+    thread_args *progress = args;
+    while(progress->count<50) {
+printf("while");
+        download_img(progress->pic, progress->count, *progress->downloaded);
+    }
+    return NULL;
+}
 
 int paster(int numT, int pic) {
-    bool downloaded[50];
-    int count = 0;
+    /*bool downloaded[50] = {false};
+    int count = 0;*/
+    thread_args *args = malloc(sizeof(thread_args));
+    args->count = 0;
+    args->pic = pic;
+    for(int i=0; i<50; i++);
+       // args->downloaded[i] = false;
+
+    char **file_paths = malloc(50 * sizeof(char *));
 
     printf("Use %d threads.\n", numT);
     printf("Get %d picture.\n", pic);
-    //download_img(pic);
 
     pthread_t *p_tids = malloc(sizeof(pthread_t) * numT);
-    struct thread_args in_params[numT];
-    /*struct thread_ret *p_results[numT];*/
-     
-    for (int i=0; i<numT; i++) {
-        in_params[i].pic = pic;
-        pthread_create(p_tids + i, NULL, download_img, in_params + i); 
+    if (p_tids == NULL) {
+        printf("Thread ID malloc failed");
+        return -1;
     }
-
-    for (int i=0; i<numT; i++) {
-        (void)pthread_join(p_tids[i], NULL);
-        /*printf("Thread ID %lu joined.\n", p_tids[i]);
-        printf("sum(%d,%d) = %d.\n", \
-               in_params[i].x, in_params[i].y, p_results[i]->sum); 
-        printf("product(%d,%d) = %d.\n\n", \
-               in_params[i].x, in_params[i].y, p_results[i]->product);*/
+printf("before thread loop");
+    for (int i=0; i<numT; i++){
+printf("thread loop");
+        pthread_create(p_tids + i, NULL, download_imgs, args);
     }
+    for (int i=0; i<numT; i++)
+        pthread_join(p_tids[i], NULL);
 
-    /* cleaning up */
-
-    free(p_tids);
-    
-    while (count < 50) {
-       // count = download_img(pic, count, downloaded);
+    /*while (count < 50) {
+        count = download_img(pic, count, downloaded);
         printf("count = %d\n", count);
-    }
+    }*/
 
+    /*for (int i = 0; i < 50; i++) {
+        file_paths[i] = malloc(20 * sizeof(char));
+        if (file_paths[i] == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            return -1; 
+        }
+        sprintf(file_paths[i], "./source/img/img%d_%d.png", pic, i);
+    }*/
+
+    //catpngmain(file_paths);
+    free(p_tids);
+    free(file_paths);
     return 0;
+
 }
 
 int main(int argc, char **argv)
@@ -79,4 +102,6 @@ int main(int argc, char **argv)
         }
     }
     paster(t, n);
+
+    return 0;
 }
