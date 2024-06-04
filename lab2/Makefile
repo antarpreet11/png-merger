@@ -6,26 +6,23 @@ VPATH := source
 LDLIBS = -lcurl -pthread
 
 SRCS   = paster.c main_write_header_cb.c
-OBJS   = paster.o 
+OBJS   = $(SRCS:.c=.o)
 TARGETS= paster
 
-all: ${TARGETS}
+all: $(TARGETS)
 
-paster.out: $(OBJS) 
+paster: $(OBJS)
 	$(LD) -o $@ $^ $(LDLIBS) $(LDFLAGS) 
 
-%.o: %.c 
-	$(CC) $(CFLAGS) -c $< 
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 %.d: %.c
-	gcc -MM -MF $@ $<
+	$(CC) -MM -MF $@ $<
 
 -include $(SRCS:.c=.d)
 
 .PHONY: clean
 clean:
-	rm -f *~ *.d *.o $(TARGETS) 
-
-.PHONY: imgclean 
-imgclean:
+	rm -f *~ *.d *.o $(TARGETS)
 	rm -rf source/img/*.png

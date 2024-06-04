@@ -3,58 +3,67 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <pthread.h>
-#include "main_write_header_cb.c"
+#include "main_write_header_cb.h"
 
-struct thread_args
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+typedef struct
 {
     int pic;
-    int count;
+    int *count;
     bool *downloaded[50];
-}typedef thread_args;
+    pthread_t id;
+}thread_args;
 
-void *download_imgs(void *args);
 void *download_imgs(void *args) {
-printf("download_imgs");
     thread_args *progress = args;
-    while(progress->count<50) {
-printf("while");
-        download_img(progress->pic, progress->count, *progress->downloaded);
+    while(1) {
+        pthread_mutex_lock(&mutex);
+        int localCount = *progress->count;
+//printf("localCount: %d ", localCount);
+        if(localCount < 50) {
+//printf("calling download image\n");
+//printf("%d\n", *progress->count);
+            *progress->count = download_img(progress->pic, *progress->count, progress->downloaded); }
+        pthread_mutex_unlock(&mutex);
+        
+        if(localCount >= 50)
+            break;
     }
+
     return NULL;
 }
 
 int paster(int numT, int pic) {
     /*bool downloaded[50] = {false};
     int count = 0;*/
-    thread_args *args = malloc(sizeof(thread_args));
-    args->count = 0;
-    args->pic = pic;
-    for(int i=0; i<50; i++);
-       // args->downloaded[i] = false;
+    thread_args *args = malloc(sizeof(thread_args) * numT);
+    int count = 0;
+
+    for(int i=0; i<numT; i++) {
+        args[i].pic = pic;
+        args[i].count = &count;
+
+        for(int j=0; j<50; j++) {
+            args[i].downloaded[j] = malloc(sizeof(bool));
+            *(args[i].downloaded[j]) = false;
+        }
+
+        pthread_create(&args[i].id, NULL, &download_imgs, &args[i]);
+    }
+/*for(int i=0; i<numT; i++)
+for(int j=0; j<50; j++)
+printf("Thread: %d Index: %d Value: %d\n",i,j, args[i].downloaded[j]);*/
 
     char **file_paths = malloc(50 * sizeof(char *));
 
     printf("Use %d threads.\n", numT);
-    printf("Get %d picture.\n", pic);
+    printf("Get picture %d.\n", pic);
 
-    pthread_t *p_tids = malloc(sizeof(pthread_t) * numT);
-    if (p_tids == NULL) {
-        printf("Thread ID malloc failed");
-        return -1;
-    }
-printf("before thread loop");
-    for (int i=0; i<numT; i++){
-printf("thread loop");
-        pthread_create(p_tids + i, NULL, download_imgs, args);
-    }
-    for (int i=0; i<numT; i++)
-        pthread_join(p_tids[i], NULL);
+    for(int i=0; i<numT; i++)
+        pthread_join(args[i].id, NULL);
 
-    /*while (count < 50) {
-        count = download_img(pic, count, downloaded);
-        printf("count = %d\n", count);
-    }*/
+printf("%d\n", count);
 
     /*for (int i = 0; i < 50; i++) {
         file_paths[i] = malloc(20 * sizeof(char));
@@ -66,7 +75,13 @@ printf("thread loop");
     }*/
 
     //catpngmain(file_paths);
-    free(p_tids);
+    pthread_mutex_destroy(&mutex);
+
+    for(int i=0; i<numT; i++)
+        for(int j=0; j<50; j++)
+            free(args[i].downloaded[j]);
+
+    free(args);
     free(file_paths);
     return 0;
 
