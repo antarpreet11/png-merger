@@ -14,6 +14,7 @@ typedef struct
     bool *downloaded[50];
     pthread_t id;
 }thread_args;
+thread_args *args;
 
 void *download_imgs(void *args) {
     thread_args *progress = args;
@@ -37,19 +38,21 @@ void *download_imgs(void *args) {
 int paster(int numT, int pic) {
     /*bool downloaded[50] = {false};
     int count = 0;*/
-    thread_args *args = malloc(sizeof(thread_args) * numT);
+    args = malloc(sizeof(thread_args));
+    pthread_t *threadIDs = malloc(sizeof(pthread_t) * numT);
     int count = 0;
 
-    for(int i=0; i<numT; i++) {
-        args[i].pic = pic;
-        args[i].count = &count;
+    args->pic = pic;
+    args->count = &count;
 
         for(int j=0; j<50; j++) {
-            args[i].downloaded[j] = malloc(sizeof(bool));
-            *(args[i].downloaded[j]) = false;
+            args->downloaded[j] = malloc(sizeof(bool));
+            *(args->downloaded[j]) = false;
         }
 
-        pthread_create(&args[i].id, NULL, &download_imgs, &args[i]);
+    for(int i=0; i<numT; i++){
+
+        pthread_create(&threadIDs[i], NULL, &download_imgs, (void *)args);
     }
 /*for(int i=0; i<numT; i++)
 for(int j=0; j<50; j++)
@@ -61,7 +64,7 @@ printf("Thread: %d Index: %d Value: %d\n",i,j, args[i].downloaded[j]);*/
     printf("Get picture %d.\n", pic);
 
     for(int i=0; i<numT; i++)
-        pthread_join(args[i].id, NULL);
+        pthread_join(threadIDs[i], NULL);
 
 printf("%d\n", count);
 
@@ -77,9 +80,8 @@ printf("%d\n", count);
     //catpngmain(file_paths);
     pthread_mutex_destroy(&mutex);
 
-    for(int i=0; i<numT; i++)
-        for(int j=0; j<50; j++)
-            free(args[i].downloaded[j]);
+    for(int j=0; j<50; j++)
+        free(args->downloaded[j]);
 
     free(args);
     free(file_paths);
