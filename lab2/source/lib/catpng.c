@@ -217,10 +217,11 @@ int getValidPNGs (int pathCount, char **args, char **validPNGs) {
 
 int catpngmain(char **argv) {
     char **validPNGs = calloc(50, sizeof *argv);
-
-    int pngCount = getValidPNGs(50, argv, validPNGs);
+    int pngCount = 50; //getValidPNGs(50, argv, validPNGs);
 
     if(pngCount > 0) {
+for(int i=0;i<50;i++)
+    validPNGs[i] = argv[i];
         simple_PNG_p pngOut = catpng(validPNGs, pngCount);
 
         write_png_file("all.png", pngOut);
