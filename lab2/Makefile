@@ -3,9 +3,9 @@ CFLAGS = -Wall -g -std=gnu99
 LD = gcc
 LDFLAGS = -g 
 VPATH := source
-LDLIBS = -lcurl -pthread
+LDLIBS = -lcurl -lz -pthread
 
-SRCS   = paster.c main_write_header_cb.c
+SRCS   = paster.c main_write_header_cb.c $(wildcard source/lib/*.c)
 OBJS   = $(SRCS:.c=.o)
 TARGETS= paster
 
@@ -25,4 +25,5 @@ paster: $(OBJS)
 .PHONY: clean
 clean:
 	rm -f *~ *.d *.o $(TARGETS)
+	rm -f source/lib/*~ source/lib/*.d source/lib/*.o
 	rm -rf source/img/*.png

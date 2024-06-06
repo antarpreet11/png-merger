@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include "main_write_header_cb.h"
+#include "lib/catpng.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -68,21 +69,22 @@ printf("Thread: %d Index: %d Value: %d\n",i,j, args[i].downloaded[j]);*/
 
 printf("%d\n", count);
 
-    /*for (int i = 0; i < 50; i++) {
-        file_paths[i] = malloc(20 * sizeof(char));
+    for (int i = 0; i < 50; i++) {
+        file_paths[i] = malloc(100 * sizeof(char));
         if (file_paths[i] == NULL) {
             fprintf(stderr, "Memory allocation failed\n");
             return -1; 
         }
         sprintf(file_paths[i], "./source/img/img%d_%d.png", pic, i);
-    }*/
+    }
 
-    //catpngmain(file_paths);
+    catpngmain(file_paths);
     pthread_mutex_destroy(&mutex);
 
     for(int j=0; j<50; j++)
         free(args->downloaded[j]);
 
+    free(threadIDs);
     free(args);
     free(file_paths);
     return 0;
