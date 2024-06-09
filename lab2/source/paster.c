@@ -8,25 +8,17 @@
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct
-{
-    int pic;
-    int *count;
-    bool *downloaded[50];
-    pthread_t id;
-}thread_args;
 thread_args *args;
 
 void *download_imgs(void *args) {
-    thread_args *progress = args;
+    thread_args *progress = (thread_args*)args;
     while(1) {
         pthread_mutex_lock(&mutex);
         int localCount = *progress->count;
-//printf("localCount: %d ", localCount);
-        if(localCount < 50) {
-//printf("calling download image\n");
-//printf("%d\n", *progress->count);
-            *progress->count = download_img(progress->pic, *progress->count, progress->downloaded); }
+
+        if(localCount < 50)
+            if(download_img(progress) != 0)
+                return NULL;
         pthread_mutex_unlock(&mutex);
         
         if(localCount >= 50)
@@ -37,14 +29,13 @@ void *download_imgs(void *args) {
 }
 
 int paster(int numT, int pic) {
-    /*bool downloaded[50] = {false};
-    int count = 0;*/
     args = malloc(sizeof(thread_args));
     pthread_t *threadIDs = malloc(sizeof(pthread_t) * numT);
     int count = 0;
 
     args->pic = pic;
     args->count = &count;
+    args->errorOccured = false;
 
         for(int j=0; j<50; j++) {
             args->downloaded[j] = malloc(sizeof(bool));
@@ -55,9 +46,6 @@ int paster(int numT, int pic) {
 
         pthread_create(&threadIDs[i], NULL, &download_imgs, (void *)args);
     }
-/*for(int i=0; i<numT; i++)
-for(int j=0; j<50; j++)
-printf("Thread: %d Index: %d Value: %d\n",i,j, args[i].downloaded[j]);*/
 
     char **file_paths = malloc(50 * sizeof(char *));
 
@@ -67,7 +55,6 @@ printf("Thread: %d Index: %d Value: %d\n",i,j, args[i].downloaded[j]);*/
     for(int i=0; i<numT; i++)
         pthread_join(threadIDs[i], NULL);
 
-printf("%d\n", count);
 
     for (int i = 0; i < 50; i++) {
         file_paths[i] = malloc(100 * sizeof(char));
@@ -81,8 +68,10 @@ printf("%d\n", count);
     catpngmain(file_paths);
     pthread_mutex_destroy(&mutex);
 
-    for(int j=0; j<50; j++)
+    for(int j=0; j<50; j++) {
         free(args->downloaded[j]);
+        free(file_paths[j]);
+    }
 
     free(threadIDs);
     free(args);

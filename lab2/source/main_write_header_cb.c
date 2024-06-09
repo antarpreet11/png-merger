@@ -161,32 +161,27 @@ int write_file(const char *path, const void *in, size_t len)
 }
 
 
-int download_img(int img_num, int count, bool **downloaded) 
+//int download_img(int img_num, int count, bool **downloaded) 
+int download_img(struct thread_args *args)
 {
-//printf("1\n");
     CURL *curl_handle;
     CURLcode res;
     char url[256];
     RECV_BUF recv_buf;
     char fname[256];
-    int newCount = count;
-//printf("2\n");
-    recv_buf_init(&recv_buf, BUF_SIZE);
-//printf("3\n");    
-    if (img_num) {
-        sprintf(url, IMG_URL, img_num);
+
+    recv_buf_init(&recv_buf, BUF_SIZE); 
+    if (args->pic) {
+        sprintf(url, IMG_URL, args->pic);
     } else {
         sprintf(url, IMG_URL, 1); 
     }
-//printf("4\n");
+
     curl_global_init(CURL_GLOBAL_DEFAULT);
-//printf("5\n");
-    /* init a curl session */
     curl_handle = curl_easy_init();
 
     if (curl_handle == NULL) {
         fprintf(stderr, "curl_easy_init: returned NULL\n");
-        //return 1;
     }
 
     /* specify URL to get */
@@ -211,32 +206,24 @@ int download_img(int img_num, int count, bool **downloaded)
 
     if( res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    } /*else {
-	printf("%lu bytes received in memory %p, seq=%d.\n", \
-               recv_buf.size, recv_buf.buf, recv_buf.seq);
-    }*/
-
-    sprintf(fname, "./source/img/img%d_%d.png", img_num, recv_buf.seq);
-//printf("6\n");
-    pthread_mutex_lock(&mutex1);
-    if (*downloaded[recv_buf.seq] == false) {
-//printf("1\n");
-        write_file(fname, recv_buf.buf, recv_buf.size);
-//printf("2\n");
-        *downloaded[recv_buf.seq] = true;
-//printf("3\n");
-        newCount = count + 1;
     }
-//printf("%d\n", *downloaded[0]);
-//newCount = count +1;
-    pthread_mutex_unlock(&mutex1);
 
-//printf("7\n");
+    sprintf(fname, "./source/img/img%d_%d.png", args->pic, recv_buf.seq);
+    pthread_mutex_lock(&mutex1);
+
+    if (*args->downloaded[recv_buf.seq] == false) {
+        write_file(fname, recv_buf.buf, recv_buf.size);
+        *args->downloaded[recv_buf.seq] = true;
+        (*args->count)++;
+    }
+
+    pthread_mutex_unlock(&mutex1);
 
     /* cleaning up */
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
     recv_buf_cleanup(&recv_buf);
-    return newCount;
-//printf("8\n");
+    pthread_mutex_destroy(&mutex1);
+
+    return 0;
 }

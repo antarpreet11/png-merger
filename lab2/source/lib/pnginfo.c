@@ -180,8 +180,6 @@ simple_PNG_p pnginfo(const char *buf) {
 
 		png->p_IEND = IEND_c;
 
-		printf("%s: %d x %d\n", buf, ntohl(IHDR_d->width), ntohl(IHDR_d->height));
-
 		free(crcBuf);
 		fclose(img);
 

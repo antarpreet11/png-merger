@@ -117,7 +117,6 @@ simple_PNG_p catpng(char **buf, int count) {
     U64 inf_dataLengths[count];
     U64 inf_totalDataLength = 0;
     int newPNGheight = 0, pngWidth = 0, pngHeight = 0;
-    int ret = 0;
 
     for(int i=0; i<count; i++) {
         pngHeight = get_png_height((data_IHDR_p)pngIn[i]->p_IHDR->p_data);
@@ -125,7 +124,7 @@ simple_PNG_p catpng(char **buf, int count) {
         /*Increase size of inflated data buffer by size of next inflated IDAT data segment*/
         inf_IDAT_data = realloc(inf_IDAT_data, inf_totalDataLength+(4*pngWidth+1)*pngHeight);
         /*Append and inflate new IDAT data segment to inflated data buffer*/
-        ret = mem_inf(inf_IDAT_data+inf_totalDataLength, &inf_dataLengths[i], pngIn[i]->p_IDAT->p_data, (U64)pngIn[i]->p_IDAT->length);
+        mem_inf(inf_IDAT_data+inf_totalDataLength, &inf_dataLengths[i], pngIn[i]->p_IDAT->p_data, (U64)pngIn[i]->p_IDAT->length);
         /*Update new PNG parameters*/
         newPNGheight += pngHeight;
         inf_totalDataLength += inf_dataLengths[i];
@@ -136,7 +135,7 @@ simple_PNG_p catpng(char **buf, int count) {
     /*Deflate concatentated IDAT data*/
     U8 *def_IDAT_data = malloc(inf_totalDataLength);
     U64 def_totalDataLength = 0;
-    ret = mem_def(def_IDAT_data, &def_totalDataLength, inf_IDAT_data, inf_totalDataLength, Z_DEFAULT_COMPRESSION);
+    mem_def(def_IDAT_data, &def_totalDataLength, inf_IDAT_data, inf_totalDataLength, Z_DEFAULT_COMPRESSION);
     /*Reduce size of deflated data buffer*/
     def_IDAT_data = realloc(def_IDAT_data, def_totalDataLength);
 
@@ -217,7 +216,7 @@ int getValidPNGs (int pathCount, char **args, char **validPNGs) {
 
 int catpngmain(char **argv) {
     char **validPNGs = calloc(50, sizeof *argv);
-    int pngCount = 50; //getValidPNGs(50, argv, validPNGs);
+    int pngCount = 50; 
 
     if(pngCount > 0) {
 for(int i=0;i<50;i++)
