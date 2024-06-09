@@ -17,15 +17,29 @@ void *download_imgs(void *args) {
         int localCount = *progress->count;
 
         if(localCount < 50)
-            if(download_img(progress) != 0)
-                return NULL;
+            if(download_img(progress) != 0 || progress->noError == false){
+                progress->noError = false; 
+                break;
+            }
         pthread_mutex_unlock(&mutex);
         
         if(localCount >= 50)
             break;
     }
-
+    
     return NULL;
+}
+
+void cleanMemory (thread_args *a, pthread_t *t, char **f) {
+    for(int j=0; j<50; j++) {
+            free(a->downloaded[j]);
+            free(f[j]);
+        }
+
+        free(t);
+        free(a);
+        free(f);
+        pthread_mutex_destroy(&mutex);
 }
 
 int paster(int numT, int pic) {
@@ -35,7 +49,7 @@ int paster(int numT, int pic) {
 
     args->pic = pic;
     args->count = &count;
-    args->errorOccured = false;
+    args->noError = true;
 
         for(int j=0; j<50; j++) {
             args->downloaded[j] = malloc(sizeof(bool));
@@ -55,7 +69,6 @@ int paster(int numT, int pic) {
     for(int i=0; i<numT; i++)
         pthread_join(threadIDs[i], NULL);
 
-
     for (int i = 0; i < 50; i++) {
         file_paths[i] = malloc(100 * sizeof(char));
         if (file_paths[i] == NULL) {
@@ -65,18 +78,17 @@ int paster(int numT, int pic) {
         sprintf(file_paths[i], "./source/img/img%d_%d.png", pic, i);
     }
 
-    catpngmain(file_paths);
-    pthread_mutex_destroy(&mutex);
+    if(args->noError) {
+        catpngmain(file_paths);
+        cleanMemory(args, threadIDs, file_paths);
 
-    for(int j=0; j<50; j++) {
-        free(args->downloaded[j]);
-        free(file_paths[j]);
+        return 0;
     }
+    else {
+        cleanMemory(args, threadIDs, file_paths);
 
-    free(threadIDs);
-    free(args);
-    free(file_paths);
-    return 0;
+        return -2;
+    }
 
 }
 
@@ -109,7 +121,6 @@ int main(int argc, char **argv)
             return -1;
         }
     }
-    paster(t, n);
 
-    return 0;
+    return paster(t, n);
 }

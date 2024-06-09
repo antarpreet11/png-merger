@@ -33,7 +33,7 @@ typedef struct thread_args
     int pic;
     int *count;
     bool *downloaded[50];
-    bool errorOccured;
+    bool noError;
 }thread_args;
 
 size_t header_cb_curl(char *p_recv, size_t size, size_t nmemb, void *userdata);
