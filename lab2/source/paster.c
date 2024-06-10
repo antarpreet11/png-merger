@@ -51,7 +51,10 @@ int paster(int numT, int pic) {
         pthread_create(&threadIDs[i], NULL, &download_imgs, (void *)args);
     }
 
-    printf("Use %d threads.\n", numT);
+    if(numT > 1)
+        printf("Use %d threads.\n", numT);
+    else
+        printf("Use 1 thread.\n");
     printf("Get picture %d.\n", pic);
 
     for(int i=0; i<numT; i++)
