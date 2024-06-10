@@ -32,7 +32,7 @@ typedef struct thread_args
 {
     int pic;
     int *count;
-    bool *downloaded[50];
+    simple_PNG_p downloaded[50];
     bool noError;
 }thread_args;
 

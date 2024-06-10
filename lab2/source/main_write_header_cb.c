@@ -211,9 +211,11 @@ int download_img(struct thread_args *args)
     sprintf(fname, "./source/img/img%d_%d.png", args->pic, recv_buf.seq);
     pthread_mutex_lock(&mutex1);
 
-    if (*args->downloaded[recv_buf.seq] == false) {
-        write_file(fname, recv_buf.buf, recv_buf.size);
-        *args->downloaded[recv_buf.seq] = true;
+    if (args->downloaded[recv_buf.seq] == NULL) {
+        //write_file(fname, recv_buf.buf, recv_buf.size);
+        char *buf = malloc(sizeof(char *));
+        buf = recv_buf.buf;
+        args->downloaded[recv_buf.seq] = pnginfo(buf);
         (*args->count)++;
     }
 

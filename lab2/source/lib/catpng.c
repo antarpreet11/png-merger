@@ -99,12 +99,12 @@ void write_png_file(const char *filename, simple_PNG_p new_png) {
     fclose(fp);  
 }
 
-simple_PNG_p catpng(char **buf, int count) {
-    simple_PNG_p pngIn[count];
+simple_PNG_p catpng(simple_PNG_p *pngIn, int count) {
+    //simple_PNG_p pngIn[count];
     simple_PNG_p pngOut = malloc(sizeof(chunk_p)*3);
 
-    for(int i=0; i<count; i++)
-        pngIn[i] = pnginfo(buf[i]);
+    /*for(int i=0; i<count; i++)
+        pngIn[i] = pnginfo(buf[i]);*/
 
     /*inflate IDAT data segments
     mcpy inflated data segments into buffer
@@ -214,14 +214,14 @@ int getValidPNGs (int pathCount, char **args, char **validPNGs) {
     return pngCount;
 }
 
-int catpngmain(char **argv) {
-    char **validPNGs = calloc(50, sizeof *argv);
+int catpngmain(simple_PNG_p *pngIn) {
+    //char **validPNGs = calloc(50, sizeof *argv);
     int pngCount = 50; 
 
     if(pngCount > 0) {
-for(int i=0;i<50;i++)
-    validPNGs[i] = argv[i];
-        simple_PNG_p pngOut = catpng(validPNGs, pngCount);
+        /*for(int i=0;i<50;i++)
+            validPNGs[i] = argv[i];*/
+        simple_PNG_p pngOut = catpng(pngIn, pngCount);
 
         write_png_file("all.png", pngOut);
 
@@ -233,6 +233,6 @@ for(int i=0;i<50;i++)
         free(pngOut->p_IHDR);
         free(pngOut);
     }
-    free(validPNGs);
+    //free(validPNGs);
     return 0;
 } 
