@@ -112,6 +112,8 @@ simple_PNG_p pnginfo(char *buf) {
 		/*Read IHDR chunk data length value*/
 		U32 bufInt[CHUNK_LEN_SIZE];
 		//fread(bufInt, 1, CHUNK_LEN_SIZE, img);
+		memcpy(bufInt, buf, CHUNK_LEN_SIZE);
+		buf += CHUNK_LEN_SIZE;
 		IHDR_c->length = ntohl(*bufInt);
 
 		/*Read IHDR chunk type code*/
@@ -122,8 +124,13 @@ simple_PNG_p pnginfo(char *buf) {
 		for(int i=0; i<CHUNK_TYPE_SIZE; i++)
 			IHDR_c->type[i] = bufChar[i];
 
+/*for(int i=0; i<CHUNK_TYPE_SIZE; i++)
+	printf("%c", IHDR_c->type[i]);
+printf("\n");*/
+
 		get_png_data_IHDR(IHDR_d, buf, IHDR_c->length, SEEK_CUR);
 		IHDR_c->p_data = (U8 *)IHDR_d;
+		buf += (sizeof(U32)*2 + sizeof(U8)*5);
 
 		/*Read IHDR CRC*/
 		//fread(bufInt, 1, CHUNK_CRC_SIZE, img);
@@ -158,6 +165,9 @@ simple_PNG_p pnginfo(char *buf) {
 		for(int i=0; i<CHUNK_TYPE_SIZE; i++)
 			IDAT_c->type[i] = bufChar[i];
 
+/*for(int i=0; i<CHUNK_TYPE_SIZE; i++)
+	printf("%c", IDAT_c->type[i]);
+printf("\n");*/
 		/*Read IDAT data segment*/
 		U8 *data_id = malloc(IDAT_c->length);
 		//fread(data_id, 1, IDAT_c->length, img);

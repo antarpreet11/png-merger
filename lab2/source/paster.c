@@ -50,7 +50,7 @@ int paster(int numT, int pic) {
     args->noError = true;
 
         for(int j=0; j<50; j++) {
-            args->downloaded[j] = malloc(sizeof(bool));
+            args->downloaded[j] = malloc(sizeof(simple_PNG_p));
             (args->downloaded[j]) = NULL;
         }
 

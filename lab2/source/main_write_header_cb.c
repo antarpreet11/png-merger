@@ -213,9 +213,9 @@ int download_img(struct thread_args *args)
 
     if (args->downloaded[recv_buf.seq] == NULL) {
         //write_file(fname, recv_buf.buf, recv_buf.size);
-        char *buf = malloc(sizeof(char *));
-        buf = recv_buf.buf;
-        args->downloaded[recv_buf.seq] = pnginfo(buf);
+        //char *buf = malloc(sizeof(char *));
+        //buf = recv_buf.buf;
+        args->downloaded[recv_buf.seq] = pnginfo(recv_buf.buf);
         (*args->count)++;
     }
 
