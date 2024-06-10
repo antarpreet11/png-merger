@@ -65,8 +65,8 @@ typedef struct simple_PNG {
 int is_png(U8 *buf, size_t n);
 int get_png_height(struct data_IHDR *buf);
 int get_png_width(struct data_IHDR *buf); 
-int get_png_data_IHDR(struct data_IHDR *out, FILE *fp, long offset, int whence);
+int get_png_data_IHDR(struct data_IHDR *out, char *dp, long offset, int whence);
 
 /* declare your own functions prototypes here */
-simple_PNG_p pnginfo(const char *buf);
+simple_PNG_p pnginfo(char *buf);
 void set_png_height(struct data_IHDR *buf, U32 h);

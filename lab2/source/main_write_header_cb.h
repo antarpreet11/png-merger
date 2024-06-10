@@ -32,7 +32,7 @@ typedef struct thread_args
 {
     int pic;
     int *count;
-    bool *downloaded[50];
+    simple_PNG_p downloaded[50];
     bool noError;
 }thread_args;
 
@@ -41,5 +41,4 @@ size_t write_cb_curl3(char *p_recv, size_t size, size_t nmemb, void *p_userdata)
 int recv_buf_init(RECV_BUF *ptr, size_t max_size);
 int recv_buf_cleanup(RECV_BUF *ptr);
 int write_file(const char *path, const void *in, size_t len);
-//int download_img(int img_num, int count, bool **downloaded);
 int download_img(struct thread_args *args);

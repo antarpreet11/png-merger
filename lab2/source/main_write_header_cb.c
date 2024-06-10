@@ -40,7 +40,7 @@
  * explains the if block in the code.
  */
 
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t mutex;
 
 size_t header_cb_curl(char *p_recv, size_t size, size_t nmemb, void *userdata)
 {
@@ -160,8 +160,6 @@ int write_file(const char *path, const void *in, size_t len)
     return fclose(fp);
 }
 
-
-//int download_img(int img_num, int count, bool **downloaded) 
 int download_img(struct thread_args *args)
 {
     CURL *curl_handle;
@@ -209,21 +207,18 @@ int download_img(struct thread_args *args)
     }
 
     sprintf(fname, "./source/img/img%d_%d.png", args->pic, recv_buf.seq);
-    pthread_mutex_lock(&mutex1);
 
-    if (*args->downloaded[recv_buf.seq] == false) {
-        write_file(fname, recv_buf.buf, recv_buf.size);
-        *args->downloaded[recv_buf.seq] = true;
+    pthread_mutex_lock(&mutex);
+    if (args->downloaded[recv_buf.seq] == NULL) {
+        args->downloaded[recv_buf.seq] = pnginfo(recv_buf.buf);
         (*args->count)++;
     }
-
-    pthread_mutex_unlock(&mutex1);
+    pthread_mutex_unlock(&mutex);
 
     /* cleaning up */
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
     recv_buf_cleanup(&recv_buf);
-    pthread_mutex_destroy(&mutex1);
 
     return 0;
 }
