@@ -12,16 +12,20 @@ thread_args *args;
 
 void *download_imgs(void *args) {
     thread_args *progress = (thread_args*)args;
+    thread_args *temp;
+
     while(1) {
         pthread_mutex_lock(&mutex);
         int localCount = *progress->count;
+        temp = progress;
+        pthread_mutex_unlock(&mutex);
 
-        if(localCount < 50)
-            if(download_img(progress) != 0 || progress->noError == false){
+        if(localCount < 50) {
+            if(download_img(temp) != 0 || progress->noError == false){
                 progress->noError = false; 
                 break;
             }
-        pthread_mutex_unlock(&mutex);
+        }
         
         if(localCount >= 50)
             break;
@@ -31,13 +35,9 @@ void *download_imgs(void *args) {
 }
 
 void cleanMemory (thread_args *a, pthread_t *t) {
-    for(int j=0; j<50; j++) {
-            free(a->downloaded[j]);
-        }
-
-        free(t);
-        free(a);
-        pthread_mutex_destroy(&mutex);
+    free(t);
+    free(a);
+    pthread_mutex_destroy(&mutex);
 }
 
 int paster(int numT, int pic) {
@@ -49,32 +49,20 @@ int paster(int numT, int pic) {
     args->count = &count;
     args->noError = true;
 
-        for(int j=0; j<50; j++) {
-            args->downloaded[j] = malloc(sizeof(simple_PNG_p));
-            (args->downloaded[j]) = NULL;
-        }
+    for(int j=0; j<50; j++) {
+        args->downloaded[j] = NULL;
+    }
 
     for(int i=0; i<numT; i++){
 
         pthread_create(&threadIDs[i], NULL, &download_imgs, (void *)args);
     }
 
-    //char **file_paths = malloc(50 * sizeof(char *));
-
     printf("Use %d threads.\n", numT);
     printf("Get picture %d.\n", pic);
 
     for(int i=0; i<numT; i++)
         pthread_join(threadIDs[i], NULL);
-
-    /*for (int i = 0; i < 50; i++) {
-        file_paths[i] = malloc(100 * sizeof(char));
-        if (file_paths[i] == NULL) {
-            fprintf(stderr, "Memory allocation failed\n");
-            return -1; 
-        }
-        sprintf(file_paths[i], "./source/img/img%d_%d.png", pic, i);
-    }*/
 
     if(args->noError) {
         catpngmain(args->downloaded);
@@ -119,6 +107,7 @@ int main(int argc, char **argv)
             return -1;
         }
     }
-
+    //add error statement
+    //10 threads = 8x faster
     return paster(t, n);
 }
