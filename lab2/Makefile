@@ -26,5 +26,4 @@ paster: $(OBJS)
 clean:
 	rm -f *~ *.d *.o $(TARGETS)
 	rm -f source/lib/*~ source/lib/*.d source/lib/*.o
-	rm -rf source/img/*.png
 	rm -rf all.png

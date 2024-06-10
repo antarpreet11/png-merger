@@ -6,28 +6,21 @@
 #include "main_write_header_cb.h"
 #include "lib/catpng.h"
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 thread_args *args;
+pthread_mutex_t mutex;
 
 void *download_imgs(void *args) {
     thread_args *progress = (thread_args*)args;
-    thread_args *temp;
 
     while(1) {
-        pthread_mutex_lock(&mutex);
-        int localCount = *progress->count;
-        temp = progress;
-        pthread_mutex_unlock(&mutex);
-
-        if(localCount < 50) {
-            if(download_img(temp) != 0 || progress->noError == false){
+        if(*progress->count < 50) {
+            if(download_img(progress) != 0 || progress->noError == false){
                 progress->noError = false; 
                 break;
             }
         }
-        
-        if(localCount >= 50)
+
+        if(*progress->count >= 50)
             break;
     }
     
@@ -37,12 +30,12 @@ void *download_imgs(void *args) {
 void cleanMemory (thread_args *a, pthread_t *t) {
     free(t);
     free(a);
-    pthread_mutex_destroy(&mutex);
 }
 
 int paster(int numT, int pic) {
     args = malloc(sizeof(thread_args));
     pthread_t *threadIDs = malloc(sizeof(pthread_t) * numT);
+    pthread_mutex_init(&mutex, NULL);
     int count = 0;
 
     args->pic = pic;
@@ -63,6 +56,8 @@ int paster(int numT, int pic) {
 
     for(int i=0; i<numT; i++)
         pthread_join(threadIDs[i], NULL);
+    
+    pthread_mutex_destroy(&mutex);
 
     if(args->noError) {
         catpngmain(args->downloaded);
@@ -107,7 +102,11 @@ int main(int argc, char **argv)
             return -1;
         }
     }
-    //add error statement
-    //10 threads = 8x faster
-    return paster(t, n);
+
+    if(paster(t, n) == 0)
+        return 0;
+    else {
+        printf("Error occurred.");
+        return -2;
+    }
 }

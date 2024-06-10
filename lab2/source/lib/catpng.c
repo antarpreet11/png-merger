@@ -215,12 +215,9 @@ int getValidPNGs (int pathCount, char **args, char **validPNGs) {
 }
 
 int catpngmain(simple_PNG_p *pngIn) {
-    //char **validPNGs = calloc(50, sizeof *argv);
     int pngCount = 50; 
 
     if(pngCount > 0) {
-        /*for(int i=0;i<50;i++)
-            validPNGs[i] = argv[i];*/
         simple_PNG_p pngOut = catpng(pngIn, pngCount);
 
         write_png_file("all.png", pngOut);
@@ -233,6 +230,6 @@ int catpngmain(simple_PNG_p *pngIn) {
         free(pngOut->p_IHDR);
         free(pngOut);
     }
-    //free(validPNGs);
+    
     return 0;
 } 
