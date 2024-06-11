@@ -208,12 +208,10 @@ int download_img(struct thread_args *args)
 
     sprintf(fname, "./source/img/img%d_%d.png", args->pic, recv_buf.seq);
 
-    pthread_mutex_lock(&mutex);
     if (args->downloaded[recv_buf.seq] == NULL) {
         args->downloaded[recv_buf.seq] = pnginfo(recv_buf.buf);
         (*args->count)++;
     }
-    pthread_mutex_unlock(&mutex);
 
     /* cleaning up */
     curl_easy_cleanup(curl_handle);

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <curl/curl.h>
 #include <pthread.h>
-#include "lib/lab_png.h"
+#include "lab_png.h"
 
 #define IMG_URL "http://ece252-1.uwaterloo.ca:2520/image?img=%d"
 #define DUM_URL "https://example.com/"

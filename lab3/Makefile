@@ -7,7 +7,7 @@ LDLIBS = -lcurl -lz -pthread
 
 SRCS   = paster2.c $(wildcard source/lib/*.c)
 OBJS   = $(SRCS:.c=.o)
-TARGETS= paster
+TARGETS= paster2
 
 all: $(TARGETS)
 
